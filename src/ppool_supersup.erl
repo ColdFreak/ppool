@@ -47,4 +47,30 @@ stop() ->
             ok
     end.
 
+start_ppool(Name, Limit, MFA) ->
+    ChildSpec = {Name,
+                 {ppool_sup, start_link,[Name, Limit, MFA]},
+                 permanent,
+                 105000,
+                 supervisor,
+                 [ppool_sup]
+                },
+    %% start_child(SupRef, ChildSepc) -> startchild_ret()
+    %% Dynamically adds a child specification to the supervisor `SupRef`
+    %% which starts the corresponding child process.
+    supervisor:start_child(ppool, ChildSpec).
+
+stop_pool(Name) ->
+    %% If the chile is temporary , the child  specification is
+    %% deleted as soon as the process terminates. This means that 
+    %% `delete_child/2` has no meaning, and `restart_child/2` can not 
+    %% be used for these children
+    supervisor:terminate_child(ppool, Name),
+    %% `delete_child/2` tells the supervisor to delete the child
+    %% specification idenfified by `Name`. The corresponding child
+    %% process must not be running. use `terminate_child/2` to terminate it.
+    %% If successful, the function returns `ok`, If the child process is running
+    %% or about to be restarted, the function returns `{error, running}` or 
+    %% `{error, restarting}` respectively.
+    supervisor:delete_child(ppool, Name).
 

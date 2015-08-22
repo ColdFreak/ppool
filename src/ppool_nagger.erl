@@ -34,12 +34,12 @@ handle_info(timeout, {Task, Delay, Max, SendTo}) ->
         Max =< 1 ->
             {stop, normal, {Task, Delay, 0, SendTo}};
         Max > 1 ->
-            %% if the function returns `{stop, Reason, Reply, }`
-            {noreply, {Task, Delay, Max-1, SendTo}}
+            %% `noreply`を返す場合、引き続き実行する
+            {noreply, {Task, Delay, Max-1, SendTo}, Delay}
     end.
 
 code_change(_OldVsn, State, _Extra) ->
-    {noreply, State}.
+    {ok, State}.
 terminate(_Reason, _State) ->
     ok.
 

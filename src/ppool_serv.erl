@@ -1,3 +1,4 @@
+%% あとでppool_servのテストかならずやる
 -module(ppool_serv).
 -behaviour(gen_server).
 -export([start/4, start_link/4, run/2, sync_queue/2, async_queue/2, stop/1]).

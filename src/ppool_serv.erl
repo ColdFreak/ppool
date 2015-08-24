@@ -50,6 +50,14 @@ async_queue(Name, Args) ->
 stop(Name) ->
     gen_server:call(Name, stop).
 
+handle_info({'DOWN', Ref, process, _Pid, _}, S = #state{limit=L, sup=Sup, refs=Refs}) ->
+    io:format("received down message~n"),
+    case gb_sets:is_element(Ref, Refs) of
+        true ->
+            handle_down_worker(Ref, S);
+        false -> %% 私たちに関係のないプロセス
+            {noreply, S}
+    end;
 % `start_worker_supervisor`は一番最初に届くメッセージ
 handle_info({start_worker_supervisor, Sup, MFA}, S=#state{}) ->
     {ok, Pid} = supervisor:start_child(Sup, ?SPEC(MFA)),
@@ -105,3 +113,30 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 
+%% 別のワーカーが死んで、キューに詰め込まれたワーカーを取り出す
+handle_down_worker(Ref, S = #state{limit=L, sup=Sup, refs=Refs}) ->
+    case queue:out(S#state.queue) of
+        {{value, {From, Args}}, Q} ->
+            {ok, Pid} = supervisor:start_child(Sup, Args),
+            %% 新しく作成したプロセスにRefをつける
+            NewRef = erlang:monitor(process, Pid),
+            NewRefs = gb_sets:insert(NewRef, gb_sets:delete(Ref, Refs)),
+
+            %% reply(Client, Reply) -> Result
+            %% This function can be used by a gen_server 
+            %% to explicitly send a reply to a client that called `call/2,3` or
+            %% `multi_call/2,3,4`, when the reply 
+            %% cannot be defined in the return value of Module:handle_call/3.
+            %% 確かに`{ok, Pid}`は別のhandle_callから返している
+            gen_server:reply(From, {ok, Pid}),
+            {noreply, S#state{refs=NewRefs, queue=Q}};
+        {{value, Args}, Q} ->
+            {ok, Pid}   = supervisor:start_child(Sup, Args),
+            NewRef      = erlang:monitor(process, Pid),
+            NewRefs     = gb_sets:insert(NewRef, gb_sets:delete(Ref, Refs)),
+            %% ここにgen_server:replyが呼ばれていない、asyncだから
+            {noreply, S#state{refs=NewRefs, queue=Q}};
+        {empty, _} ->
+            %% なんで `L+1`？そもそもlimitは何？
+            {noreply, S#state{limit=L+1, refs=gb_sets:delete(Ref, Refs)}}
+    end.

@@ -39,6 +39,8 @@ run(Name, Args) ->
 
 sync_queue(Name, Args) -> 
     %% `infinity`指定している意味は`reply`を無限時間に待つ
+    %% syncとasyncの区別は大いにここにある
+    %% 他の動作はほぼ一緒、まつか待たないかの区別
     gen_server:call(Name, {sync, Args}, infinity).
 
 async_queue(Name, Args) ->

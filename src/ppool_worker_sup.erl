@@ -7,6 +7,7 @@ start_link(MFA={_, _, _}) ->
 
 %% we use an `{M, F, A}` tuple to start the worker
 %% we can use any kind of OTP behaviour there
+%% すべてのワーカーは一時的なもので、ワーカーの起動に{M, F, A}タプルを使っている
 init({M, F, A}) ->
     MaxRestart  = 5,
     MaxTime     = 3600,

@@ -47,7 +47,7 @@ stop() ->
             ok
     end.
 
-start_ppool(Name, Limit, MFA) ->
+start_pool(Name, Limit, MFA) ->
     ChildSpec = {Name,
                  {ppool_sup, start_link,[Name, Limit, MFA]},
                  permanent,

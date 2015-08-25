@@ -1,4 +1,7 @@
 %% あとでppool_servのテストかならずやる
+%% ppool_servプロセスはworker_supプロセスに連絡が取れるべき
+%% 同じスーパバイザーによって同時に起動されるようにしたいと思っている場合は
+%% supervisor:whichl_children/1を使って策略を練るも可能だけど、使わない
 -module(ppool_serv).
 -behaviour(gen_server).
 -export([start/4, start_link/4, run/2, sync_queue/2, async_queue/2, stop/1]).

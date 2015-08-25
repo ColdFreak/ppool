@@ -1,6 +1,8 @@
 -module(ppool_sup).
 -export([start_link/3, init/1]).
 
+
+%% ユーザー直接呼び出す必要がないから、名前をつけたくない
 start_link(Name, Limit, MFA) ->
     supervisor:start_link(?MODULE, {Name, Limit, MFA}).
 

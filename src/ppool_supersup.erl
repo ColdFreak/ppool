@@ -1,4 +1,4 @@
--module(ppool_suppersup).
+-module(ppool_supersup).
 
 -behaviour(supervisor).
 
@@ -32,12 +32,12 @@ init([]) ->
     %% 最上位のスーパーバイザーの唯一のタスクは、メモリ上ニプールを保持
     %% して、それを監視することで、この場合には
     %% 子プロセスがいないスーパバイザになる。
+    %% プールの起動はstart_poolの役目
     {ok, {
             {one_for_one, MaxRestart, MaxTime},
-            []
+            [] %% 子はstart_poolで起動する
          }
     }.
-    % {ok, { {one_for_one, 5, 10}, []} }.
 
 stop() ->
     case whereis(ppool) of
@@ -48,7 +48,8 @@ stop() ->
     end.
 
 start_pool(Name, Limit, MFA) ->
-    ChildSpec = {Name,
+    ChildSpec = {Name, %% まずプールに名前をつけたい
+                 %% また`Name`をppool_supに渡して、何使うんだろう
                  {ppool_sup, start_link,[Name, Limit, MFA]},
                  permanent,
                  105000,
@@ -58,6 +59,7 @@ start_pool(Name, Limit, MFA) ->
     %% start_child(SupRef, ChildSepc) -> startchild_ret()
     %% Dynamically adds a child specification to the supervisor `SupRef`
     %% which starts the corresponding child process.
+    %% スーパースーパーバイザーの下にプールを起動する
     supervisor:start_child(ppool, ChildSpec).
 
 stop_pool(Name) ->

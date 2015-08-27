@@ -12,6 +12,7 @@ start_link(Name, Limit, MFA) ->
 %% This will let the server call for the spawning of the 
 %% worker supervisor; the `MFA` variable will be used in that call
 %% to let the `simple_one_for_one` supervisor know what kind of worker to run
+%% スーパースーパーバイザー渡ってきた`Name`は直接使わずにppool_serv`に使ってもらう
 init({Name, Limit, MFA}) ->
     MaxRestart = 1,
     MaxTime = 3600,

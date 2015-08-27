@@ -11,12 +11,13 @@ start_link(MFA={_, _, _}) ->
 init({M, F, A}) ->
     MaxRestart  = 5,
     MaxTime     = 3600,
-    ChildSpec = [{ppool_worker,
+    ChildSpec = [{ppool_worker, %% 子のID
                   {M, F, A},
-                  temporary,
+                  temporary, 
                   5000,
                   worker,
                   [M]
                  }],
 
+    %% simple_one_for_oneを使うと高速で子を追加できる
     {ok, {{simple_one_for_one, MaxRestart, MaxTime},ChildSpec}}.

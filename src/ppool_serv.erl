@@ -25,6 +25,7 @@ start(Name, Limit, Sup, MFA) when is_atom(Name), is_integer(Limit) ->
     gen_server:start({local, Name}, ?MODULE, {Limit, MFA, Sup}, []).
 
 %% ppool_supから起動されると、ppool_servがワーカースーパバイザーを起動する
+%% `ppool_sup`から渡ってきたNameで自身に名前をつける
 start_link(Name, Limit, Sup, MFA) when is_atom(Name), is_integer(Limit) ->
     gen_server:start_link({local, Name}, ?MODULE, {Limit, MFA, Sup}, []).
 

@@ -8,7 +8,7 @@
 -export([init/1]).
 
 -record(state, {limit=0,
-                sup,
+                sup, %% ワーカースーパーバイザーをppool_supの下に起動するようにppool_supのPidをもらってくる
                 refs, %% gb_sets:empty()が最初に入る
                 queue=queue:new()}).
 

@@ -5,8 +5,7 @@
 -module(ppool_serv).
 -behaviour(gen_server).
 -export([start/4, start_link/4, run/2, sync_queue/2, async_queue/2, stop/1]).
--export([init/1]).
-
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
 -record(state, {limit=0,
                 sup, %% ワーカースーパーバイザーをppool_supの下に起動するようにppool_supのPidをもらってくる
                 refs, %% gb_sets:empty()が最初に入る
@@ -54,7 +53,7 @@ async_queue(Name, Args) ->
 stop(Name) ->
     gen_server:call(Name, stop).
 
-handle_info({'DOWN', Ref, process, _Pid, _}, S = #state{limit=L, sup=Sup, refs=Refs}) ->
+handle_info({'DOWN', Ref, process, _Pid, _}, S = #state{limit=_L, sup=_Sup, refs=Refs}) ->
     io:format("received down message~n"),
     case gb_sets:is_element(Ref, Refs) of
         true ->
@@ -86,9 +85,29 @@ handle_call({run, Args}, _From, S=#state{limit=N, sup=Sup, refs=R}) when N > 0 -
 handle_call({run, Args}, _From, S=#state{limit=N}) when N =< 0 ->
     {reply, noalloc, S};
 
-%% `sync`の意味はワーカーが起動されるまで待つ
+%% @doc `sync`の意味はワーカーが起動されるまで待つ
+%% 1> ppool:start_link().
+%% {ok,<0.34.0>}
+%% 2> ppool:start_pool(nagger, 2, {ppool_nagger, start_link, []}).
+%% {ok,<0.36.0>}
+%%
+%% 一つのメッセージを処理したらdown messageがくる
+%% 3> ppool:sync_queue(nagger, ["Pet a dog", 3000, 1, self()]).
+%% {ok,<0.40.0>}
+%% received down message
+%%
+%% 二つのメッセージを処理した後にdown messageがくる
+%% 4> ppool:sync_queue(nagger, ["Pet a dog", 3000, 2, self()]). 
+%% {ok,<0.42.0>}
+%% received down message
 handle_call({sync, Args}, _From, S = #state{limit=N, sup=Sup, refs=R}) when N > 0 ->
     {ok, Pid} = supervisor:start_child(Sup, Args),
+    %% An alternative to links are monitors. 
+    %% A process Pid1 can create a monitor for Pid2 by calling the BIF
+    %% erlang:monitor(process, Pid2). The function returns a reference Ref.
+    %% If Pid2 terminates with exit reason Reason, a 'DOWN' message is sent to Pid1:
+    %% {'DOWN', Ref, process, Pid2, Reason}
+    %% minotorするとワーカー終了するときにdown messageが帰ってきて、監視できる
     Ref = erlang:monitor(process, Pid),
     {reply, {ok, Pid}, S#state{limit=N-1, refs=gb_sets:add(Ref, R)}};
 handle_call({sync, Args}, From, S = #state{queue=Q}) ->
@@ -144,3 +163,11 @@ handle_down_worker(Ref, S = #state{limit=L, sup=Sup, refs=Refs}) ->
             %% なんで `L+1`？そもそもlimitは何？
             {noreply, S#state{limit=L+1, refs=gb_sets:delete(Ref, Refs)}}
     end.
+
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+    

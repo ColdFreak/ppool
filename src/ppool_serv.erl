@@ -94,13 +94,15 @@ handle_call({run, _Args}, _From, S=#state{limit=N}) when N =< 0 ->
 %% {ok,<0.36.0>}
 %%
 %% 一つのメッセージを処理したらdown messageがくる
-%% 3> ppool:sync_queue(nagger, ["Pet a dog", 3000, 1, self()]).
-%% {ok,<0.40.0>}
+%% 7> ppool:sync_queue(nagger, ["Pet a dog", 5000, 1, self()]).
+%% {ok,<0.48.0>}
+%% 8> ppool:sync_queue(nagger, ["Pet a dog", 5000, 1, self()]).
+%% {ok,<0.50.0>}
+%% ３個目のワーカーが前の死んでから作れる
+%% 9> ppool:sync_queue(nagger, ["Pet a dog", 5000, 1, self()]).
 %% received down message
-%%
-%% 二つのメッセージを処理した後にdown messageがくる
-%% 4> ppool:sync_queue(nagger, ["Pet a dog", 3000, 2, self()]). 
-%% {ok,<0.42.0>}
+%% {ok,<0.52.0>}
+%% received down message
 %% received down message
 handle_call({sync, Args}, _From, S = #state{limit=N, sup=Sup, refs=R}) when N > 0 ->
     {ok, Pid} = supervisor:start_child(Sup, Args),

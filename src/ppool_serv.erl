@@ -82,10 +82,12 @@ handle_call({run, Args}, _From, S=#state{limit=N, sup=Sup, refs=R}) when N > 0 -
     {reply, {ok, Pid}, S#state{limit=N-1, refs=gb_sets:add(Ref, R)}};
 
 %% N個以上のプロセスが起動できないようにしている
-handle_call({run, Args}, _From, S=#state{limit=N}) when N =< 0 ->
+handle_call({run, _Args}, _From, S=#state{limit=N}) when N =< 0 ->
     {reply, noalloc, S};
 
 %% @doc `sync`の意味はワーカーが起動されるまで待つ
+%% 例えば、pool最大2個のワーカーしか作れなくて、
+%% ３個目を作りたいなら前のワーカーを死んでからできる
 %% 1> ppool:start_link().
 %% {ok,<0.34.0>}
 %% 2> ppool:start_pool(nagger, 2, {ppool_nagger, start_link, []}).

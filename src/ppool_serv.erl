@@ -71,10 +71,20 @@ handle_info(Msg, State) ->
     io:format("Unknown msg: ~p~n", [Msg]),
     {noreply, State}.
 
-%% 直接ワーカースーパバイザーがワーカーを起動するのではなく、
+%% @doc 直接ワーカースーパバイザーがワーカーを起動するのではなく、
 %% `ppool_serv`からワーカースーパバイザーの下にワーカーを起動している状況
 %% 下の`Args`は`{Task, Delay, Max, SendTo}`のようなメッセージ
 %% `run`の意味はリソースがないと起動失敗させる
+%% 例えば最大二つのワーカーのプールを作成して、runの場合三つ目は立ち上げられない
+%% どれかダンしてから立ち上げられる
+%% 31> ppool:run(nagger, ["Watch a good movie", 5000, 2, self()]).
+%% {ok,<0.76.0>}
+%% 32> ppool:run(nagger, ["finish the chapter!", 5000, 2, self()]).
+%% {ok,<0.78.0>}
+%% 33> ppool:run(nagger, ["finish the chapter!", 5000, 2, self()]).
+%% noalloc
+%% received down message
+%% received down message
 handle_call({run, Args}, _From, S=#state{limit=N, sup=Sup, refs=R}) when N > 0 ->
     {ok, Pid} = supervisor:start_child(Sup, Args),
     %% 起動されたワーカーのRefを取得して、gb_setsに入れる
@@ -126,7 +136,35 @@ handle_call(_Msg, _From, State) ->
     {noreply, State}.
 
 
-%% またワーカー起動できる( N > 0)の場合
+%% @doc またワーカー起動できる( N > 0)の場合
+%% いまの実装はいくらワーカー起動しても大丈夫, 使用例
+%% 44> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% 45> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% 46> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% 47> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% 48> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% 49> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% 50> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% 51> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% received down message
+%% 52> ppool:async_queue(nagger, ["Plant a tree", 6000, 1, self()]).
+%% ok
+%% received down message
+%% received down message
+%% received down message
+%% received down message
+%% received down message
+%% received down message
+%% received down message
+%% received down message
 handle_cast({async, Args}, S = #state{limit=N, sup=Sup, refs=R}) when N > 0 ->
     {ok, Pid}   = supervisor:start_child(Sup, Args),
     Ref         = erlang:monitor(process, Pid),

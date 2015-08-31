@@ -27,6 +27,13 @@ stop_pool(Name) ->
 %% @doc ワーカーを起動したいときに直接
 %% ppool_servサーバーを呼び出している
 %% ことに注目
+%% 下のような立ち上げ方しています
+%% 1> ppool:start_link().
+%% {ok,<0.34.0>}
+%% 2> ppool:start_pool(nagger, 2, {ppool_nagger, start_link, []}).
+%% {ok,<0.36.0>}
+%% 3> ppool:run(nagger, ["finish the chapter!", 5000, 2, self()]).
+%% {ok,<0.40.0>}
 run(Name, Args) ->
     ppool_serv:run(Name, Args).
 

@@ -1,16 +1,57 @@
 %% @author Wang Zhijun
 %% @doc ユーザーのためのAPI
 -module(ppool).
--export([start_link/0, stop/0, start_pool/3,
+-behaviour(application).
+% -export([start_link/0, stop/0, start_pool/3,
+%          run/2, sync_queue/2, async_queue/2, stop_pool/1]).
+
+-export([start/2, stop/1, start_pool/3,
          run/2, sync_queue/2, async_queue/2, stop_pool/1]).
 
 %% @private 
 %% @doc private notationで指定するとedocに{private, true}を指定しない限りドキュメントからなくなる
-start_link() ->
+% start_link() ->
+%     ppool_supersup:start_link().
+
+%% 
+%% 1> application:start(ppool).
+%% ok
+%% 4> ppool:start_pool(nag, 2, {ppool_nagger, start_link, []}).
+%% {ok,<0.43.0>}
+%% 5> ppool:run(nag, [make_ref(), 500, 10, self()]).
+%% {ok,<0.47.0>}
+%% 6> received down message
+%% 6> ppool:run(nag, [make_ref(), 500, 10, self()]).
+%% {ok,<0.49.0>}
+%% 7> received down message
+%% 8> self().
+%% <0.41.0>
+%% 9> ppool:run(nag, [make_ref(), 500, 10, self()]).
+%% {ok,<0.53.0>}
+%% 10> ppool:run(nag, [make_ref(), 500, 10, self()]).
+%% {ok,<0.55.0>}
+%% 11> ppool:run(nag, [make_ref(), 500, 10, self()]).
+%% noalloc
+%% 16> application:which_applications().
+%% [{ppool,[],"1.0.1"},
+%%  {stdlib,"ERTS  CXC 138 10","2.4"},
+%%  {kernel,"ERTS  CXC 138 10","3.2"}]
+
+%% 17> application:stop(ppool).
+%% ok
+%% 18>
+%% =INFO REPORT==== 2-Sep-2015::08:32:44 ===
+%%     application: ppool
+%%     exited: stopped
+%%     type: temporary
+start(normal, _Args) ->
     ppool_supersup:start_link().
 
-stop() ->
-    ppool_supersup:stop().
+% stop() ->
+%     ppool_supersup:stop().
+
+stop(_State) ->
+    ok.
 
 %% @doc プールを起動する
 %% プールを起動するときにLimitを指定すれば済む
